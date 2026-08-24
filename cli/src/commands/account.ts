@@ -5,8 +5,8 @@ import { run, formatOutcome } from "../lib.js";
  * The account surface is the logged-in dashboard API, not the public Commerce
  * API. Base differs (account.squarespace.com) and these endpoints were captured
  * from the authenticated app, so they're cookie/session-authenticated in the
- * browser. The CLI plans them with the bearer key for completeness; treat them
- * as read-only inspection of the account context.
+ * browser. The CLI uses SQUARESPACE_COOKIE for this read-only surface; it never
+ * sends the Commerce bearer key to account.squarespace.com.
  */
 const ACCOUNT_BASE = "https://account.squarespace.com";
 
@@ -21,6 +21,7 @@ export function accountCommand(): Command {
     .action(async (opts) => {
       const outcome = await run({
         method: "GET",
+        auth: "account",
         base: ACCOUNT_BASE,
         path: "/api/account/{accountId}/context/project-picker",
         pathParams: { accountId: opts.accountId }
@@ -36,6 +37,7 @@ export function accountCommand(): Command {
     .action(async (opts) => {
       const outcome = await run({
         method: "GET",
+        auth: "account",
         base: ACCOUNT_BASE,
         path: "/api/account/{accountId}/website-briefs",
         pathParams: { accountId: opts.accountId }
@@ -52,6 +54,7 @@ export function accountCommand(): Command {
     .action(async (opts) => {
       const outcome = await run({
         method: "GET",
+        auth: "account",
         base: ACCOUNT_BASE,
         path: "/api/account/{accountId}/project-picker/website-summaries",
         pathParams: { accountId: opts.accountId },

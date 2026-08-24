@@ -22,8 +22,9 @@ A typed commander.js CLI with one command group per surface:
 
 Reads run live. **Writes default to a dry-run** — `create`, `update`, `fulfill`,
 and `adjust` print the exact request they'd send and stop. Pass `--live-write`
-to actually send it. It reads the API key from `SQUARESPACE_API_KEY` and never
-prints it.
+to actually send it. Commerce reads/writes use `SQUARESPACE_API_KEY`.
+Account/domain reads use a browser session from `SQUARESPACE_COOKIE` or the
+protected `~/.squarespace/auth.json`; neither credential is printed.
 
 ```bash
 export SQUARESPACE_API_KEY=...
@@ -33,6 +34,11 @@ squarespace-cli orders list --json
 squarespace-cli products list --type PHYSICAL
 squarespace-cli inventory adjust --body '{"incrementOperations":[{"variantId":"V","quantity":5}]}'   # dry-run
 squarespace-cli inventory adjust --body '{"incrementOperations":[{"variantId":"V","quantity":5}]}' --live-write
+
+# Account/domains: open a logged-in account.squarespace.com page in a Chrome
+# debug profile, then capture + live-verify an origin-scoped session.
+node scripts/extract-squarespace-auth.mjs
+squarespace-cli domains list --json
 ```
 
 There's a stdio MCP server in `mcp/` (`squarespace-mcp`) that exposes the same

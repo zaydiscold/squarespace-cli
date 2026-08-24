@@ -14,7 +14,7 @@ export function buildProgram(): Command {
   program
     .name("squarespace-cli")
     .description(
-      "Squarespace Commerce + account/domains from the terminal. Reads are live; writes default to a dry-run and require --live-write. API key from SQUARESPACE_API_KEY."
+      "Squarespace Commerce + account/domains from the terminal. Commerce uses SQUARESPACE_API_KEY; account/domain reads use SQUARESPACE_COOKIE. Writes default to dry-run."
     )
     .version("0.1.0");
 

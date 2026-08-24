@@ -18,6 +18,7 @@
     "build": "tsc -p tsconfig.json && node scripts/copy-assets.mjs",
     "cli": "tsx src/index.ts",
     "test": "vitest run",
+    "vitest": "vitest",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {

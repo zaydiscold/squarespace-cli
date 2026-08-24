@@ -2,7 +2,10 @@
   "name": "squarespace-cli-workspace",
   "private": true,
   "type": "module",
-  "packageManager": "pnpm@10.32.1",
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=10 <11"
+  },
   "scripts": {
     "build": "pnpm --filter @zaydiscold/squarespace-cli build && pnpm --filter @zaydiscold/squarespace-cli-mcp build",
     "test": "pnpm --filter @zaydiscold/squarespace-cli test",
