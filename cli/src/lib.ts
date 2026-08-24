@@ -1,6 +1,7 @@
 import {
   buildRequest,
   execute,
+  getAccountCookie,
   getApiKey,
   type BuildRequestInput,
   type HttpMethod,
@@ -44,12 +45,14 @@ export async function run(input: BuildRequestInput, opts: RunOptions = {}): Prom
   if (mutating && !opts.liveWrite) {
     // Dry-run preview: build the plan with a placeholder key so we never touch
     // credentials or the network. Nothing is mutated.
-    const plan = buildRequest({ ...input, apiKey: undefined });
+    const plan = buildRequest(input);
     return { mode: "dry-run", plan };
   }
 
-  const apiKey = getApiKey();
-  const plan = buildRequest({ ...input, apiKey });
+  const auth = input.auth ?? (input.base?.includes("account.squarespace.com") ? "account" : "commerce");
+  const plan = auth === "account"
+    ? buildRequest({ ...input, auth, cookie: getAccountCookie() })
+    : buildRequest({ ...input, auth, commerceCredential: getApiKey() });
   if (mutating) {
     process.stderr.write(
       `[LIVE WRITE -> SQUARESPACE] ${plan.method} ${redactUrl(plan.url)}\n`
@@ -65,9 +68,12 @@ function redactUrl(url: string): string {
 
 /** Render an outcome for human/agent consumption. Secrets are never printed. */
 export function formatOutcome(outcome: Outcome, json: boolean): string {
+  const safeHeaders = { ...outcome.plan.headers };
+  if (safeHeaders.Authorization) safeHeaders.Authorization = "Bearer <redacted>";
+  if (safeHeaders.Cookie) safeHeaders.Cookie = "<redacted>";
   const safePlan: RequestPlan = {
     ...outcome.plan,
-    headers: { ...outcome.plan.headers, Authorization: "Bearer <redacted>" }
+    headers: safeHeaders
   };
   const payload: Record<string, unknown> = { mode: outcome.mode, request: safePlan };
   if (outcome.mode === "dry-run") {

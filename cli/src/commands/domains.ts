@@ -17,6 +17,7 @@ export function domainsCommand(): Command {
     .action(async (opts) => {
       const outcome = await run({
         method: "GET",
+        auth: "account",
         base: ACCOUNT_BASE,
         path: "/api/account/{accountId}/user/domains",
         pathParams: { accountId: opts.accountId }
@@ -34,6 +35,7 @@ export function domainsCommand(): Command {
     .action(async (opts) => {
       const outcome = await run({
         method: "GET",
+        auth: "account",
         base: ACCOUNT_BASE,
         path: "/api/account/{accountId}/domain-summaries",
         pathParams: { accountId: opts.accountId },

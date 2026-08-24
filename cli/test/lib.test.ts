@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { buildRequest, COMMERCE_BASE } from "../src/client.js";
-import { run, isMutating } from "../src/lib.js";
+import { run, isMutating, formatOutcome } from "../src/lib.js";
 
 describe("buildRequest", () => {
   it("renders the commerce base, path params, and query", () => {
@@ -17,6 +17,22 @@ describe("buildRequest", () => {
 
   it("throws when a required path param is missing", () => {
     expect(() => buildRequest({ method: "GET", path: "/orders/{orderId}" })).toThrow(/missing path parameter/);
+  });
+
+  it("uses browser cookies, never a bearer key, for account/domain requests", () => {
+    const plan = buildRequest({
+      method: "GET",
+      auth: "account",
+      base: "https://account.squarespace.com",
+      path: "/api/account/1/user/domains",
+      cookie: "SS_SESSION_ID=test"
+    });
+    expect(plan.headers.Cookie).toBe("SS_SESSION_ID=test");
+    expect(plan.headers.Authorization).toBeUndefined();
+    expect(plan.headers.Origin).toBe("https://account.squarespace.com");
+    const rendered = formatOutcome({ mode: "read", plan, result: [] }, true);
+    expect(rendered).not.toContain("SS_SESSION_ID=test");
+    expect(rendered).toContain('"Cookie":"<redacted>"');
   });
 });
 

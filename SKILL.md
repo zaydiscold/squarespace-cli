@@ -23,7 +23,8 @@ from the terminal, plus inspect the account/domains dashboard surface.
 cd ~/Desktop/squarespace-cli
 pnpm install
 pnpm build
-export SQUARESPACE_API_KEY=...   # required for live calls
+export SQUARESPACE_API_KEY=...   # Commerce surface only
+# Account/domains: node scripts/extract-squarespace-auth.mjs
 ```
 
 ## Useful commands
@@ -48,5 +49,7 @@ pnpm cli -- products create --body '{"type":"PHYSICAL","name":"Tee"}' --live-wri
 ## Safety
 
 - Reads run live. Writes default to a dry-run and require `--live-write`.
-- `SQUARESPACE_API_KEY` is read only for live calls and never printed.
-- The account/domains surface is mapped read-only.
+- `SQUARESPACE_API_KEY` is read only for live Commerce calls and never printed.
+- The account/domains surface is cookie-authenticated and read-only. The CLI
+  auto-loads `~/.squarespace/auth.json` after the capture script proves a live
+  domains read; stale sessions are never written as ready.

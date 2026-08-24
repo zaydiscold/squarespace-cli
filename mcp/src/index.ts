@@ -74,9 +74,9 @@ async function dispatch(name: string, args: Record<string, unknown>): Promise<st
     case "squarespace_webhooks_create":
       return call({ method: "POST", base: COMMERCE, path: "/webhook_subscriptions", body: args.body }, live);
     case "squarespace_account_context":
-      return call({ method: "GET", base: ACCOUNT_BASE, path: "/api/account/{accountId}/context/project-picker", pathParams: { accountId: str(args.accountId) ?? "1" } }, false);
+      return call({ method: "GET", auth: "account", base: ACCOUNT_BASE, path: "/api/account/{accountId}/context/project-picker", pathParams: { accountId: str(args.accountId) ?? "1" } }, false);
     case "squarespace_domains_list":
-      return call({ method: "GET", base: ACCOUNT_BASE, path: "/api/account/{accountId}/user/domains", pathParams: { accountId: str(args.accountId) ?? "1" } }, false);
+      return call({ method: "GET", auth: "account", base: ACCOUNT_BASE, path: "/api/account/{accountId}/user/domains", pathParams: { accountId: str(args.accountId) ?? "1" } }, false);
     default:
       throw new Error(`unknown tool: ${name}`);
   }

@@ -1,8 +1,13 @@
+import { readFileSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
+
 /**
- * Request building + execution for the Squarespace Commerce API.
+ * Request building + execution for Squarespace's two auth surfaces.
  *
  * The base for the public Commerce API is https://api.squarespace.com/1.0/commerce
- * and auth is a bearer API key in the `Authorization` header.
+ * and auth is a bearer API key in the `Authorization` header. The private
+ * account/domains dashboard uses a logged-in browser Cookie header instead.
  *
  * Request planning (method + url + headers + body) is deliberately split from
  * execution so the planner can be unit-tested without network or credentials,
@@ -29,11 +34,16 @@ export interface BuildRequestInput {
   body?: unknown;
   /** Override the base (used by account/domains internal surface). */
   base?: string;
-  /** API key. When omitted, the planner emits a placeholder so plans are still printable. */
-  apiKey?: string;
+  /** Commerce bearer credential. Omit it to emit a safe placeholder in plans. */
+  commerceCredential?: string;
+  /** Browser-session Cookie header for the account/domains dashboard. */
+  cookie?: string;
+  /** Explicit auth surface. Defaults from the request base URL. */
+  auth?: "commerce" | "account";
 }
 
 const PLACEHOLDER_KEY = "<SQUARESPACE_API_KEY>";
+const PLACEHOLDER_COOKIE = "<SQUARESPACE_COOKIE>";
 
 function renderPath(path: string, pathParams: Record<string, string> = {}): string {
   let rendered = path;
@@ -57,11 +67,18 @@ export function buildRequest(input: BuildRequestInput): RequestPlan {
     if (value === undefined) continue;
     url.searchParams.set(key, String(value));
   }
+  const auth = input.auth ?? (url.hostname === "account.squarespace.com" ? "account" : "commerce");
   const headers: Record<string, string> = {
-    Authorization: `Bearer ${input.apiKey ?? PLACEHOLDER_KEY}`,
-    "User-Agent": "squarespace-cli",
+    "User-Agent": "Mozilla/5.0 (compatible; squarespace-cli/0.1)",
     Accept: "application/json"
   };
+  if (auth === "account") {
+    headers.Cookie = input.cookie ?? PLACEHOLDER_COOKIE;
+    headers.Origin = "https://account.squarespace.com";
+    headers.Referer = "https://account.squarespace.com/domains";
+  } else {
+    headers.Authorization = "Bearer " + (input.commerceCredential ?? PLACEHOLDER_KEY);
+  }
   if (input.body !== undefined) {
     headers["Content-Type"] = "application/json";
   }
@@ -71,9 +88,25 @@ export function buildRequest(input: BuildRequestInput): RequestPlan {
 export function getApiKey(): string {
   const key = process.env.SQUARESPACE_API_KEY;
   if (!key) {
-    throw new Error("SQUARESPACE_API_KEY is required for live calls (set it in your environment)");
+    throw new Error("SQUARESPACE_API_KEY is required for live Commerce calls (set it in your environment)");
   }
   return key;
+}
+
+export function getAccountCookie(): string {
+  const envCookie = process.env.SQUARESPACE_COOKIE;
+  if (envCookie) return envCookie;
+
+  const authFile = process.env.SQUARESPACE_AUTH_FILE ?? join(homedir(), ".squarespace", "auth.json");
+  try {
+    const parsed = JSON.parse(readFileSync(authFile, "utf8")) as { cookie?: unknown };
+    if (typeof parsed.cookie === "string" && parsed.cookie.length > 0) return parsed.cookie;
+  } catch {
+    // The actionable error below covers missing, unreadable, and malformed files.
+  }
+  throw new Error(
+    `Squarespace account session missing; set SQUARESPACE_COOKIE or run scripts/extract-squarespace-auth.mjs (auth file: ${authFile})`
+  );
 }
 
 /**
